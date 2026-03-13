@@ -1,23 +1,44 @@
 <script setup>
 import { computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { createPaymentSession } from "@/services/payment.service";
-import { getProductBySlug } from "@/services/product.service";
+import { useRoute } from "vue-router";
 import BaseButton from "@/components/common/BaseButton.vue";
+import { getProductBySlug } from "@/services/product.service";
+import { createPaymentSession } from "@/services/payment.service";
 
 const route = useRoute();
-const router = useRouter();
 
 const slug = computed(() => route.params.slug);
-
 const product = computed(() => getProductBySlug(slug.value));
 
 async function handleCheckout() {
   const result = await createPaymentSession(slug.value);
 
-  if (result?.ok && result?.redirectUrl) {
-    router.push(result.redirectUrl);
+  if (!result?.ok) {
+    alert(result?.message || "付款建立失敗");
+    return;
   }
+
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = result.mpgUrl;
+
+  const fields = {
+    MerchantID: result.merchantId,
+    TradeInfo: result.tradeInfo,
+    TradeSha: result.tradeSha,
+    Version: result.version,
+  };
+
+  Object.entries(fields).forEach(([key, value]) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = key;
+    input.value = value;
+    form.appendChild(input);
+  });
+
+  document.body.appendChild(form);
+  form.submit();
 }
 </script>
 
