@@ -66,7 +66,7 @@ async function handleDownload(item) {
           class="w-full rounded-2xl border border-white/10 bg-neutral-900 px-4 py-3 text-white outline-none"
         />
         <BaseButton :disabled="loadingList" @click="handleLoadDownloads">
-          {{ loadingList ? "Loading..." : "查詢訂單" }}
+          {{ loadingList ? "Loading..." : "查詢" }}
         </BaseButton>
       </div>
     </div>
