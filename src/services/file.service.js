@@ -1,4 +1,4 @@
-import { apiClient } from "./api.client"
+import { apiClient } from "./api.client";
 
 export async function requestDownload(productSlug) {
     return await apiClient("/api/download/request", {
@@ -6,5 +6,5 @@ export async function requestDownload(productSlug) {
         body: JSON.stringify({
             productSlug,
         }),
-    })
+    });
 }
