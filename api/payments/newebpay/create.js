@@ -1,4 +1,4 @@
-import { newebpayConfig } from './config'
+import { newebpayConfig } from './config.js'
 
 export default function handler(req, res) {
     if (req.method !== 'POST') {
