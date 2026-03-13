@@ -43,6 +43,13 @@ export default function handler(req, res) {
         })
     }
 
+    if (!NEWEBPAY_MERCHANT_ID || !NEWEBPAY_HASH_KEY || !NEWEBPAY_HASH_IV) {
+        return res.status(500).json({
+            ok: false,
+            message: "NewebPay env missing",
+        })
+    }
+
     const { productId } = req.body || {}
 
     if (!productId) {
@@ -66,7 +73,9 @@ export default function handler(req, res) {
 
     const amt = amountMap[productId] || 299
     const itemDesc = nameMap[productId] || "Premiere Product"
-    const merchantOrderNo = `${productId}_${Date.now()}`
+
+    const safeProductId = String(productId).replace(/-/g, "_")
+    const merchantOrderNo = `${safeProductId}_${Date.now()}`.slice(0, 20)
 
     const tradeData = {
         MerchantID: NEWEBPAY_MERCHANT_ID,
@@ -81,12 +90,6 @@ export default function handler(req, res) {
         ClientBackURL: "https://sale-jade.vercel.app/products",
         Email: "test@example.com",
         CREDIT: "1",
-    }
-    if (!NEWEBPAY_MERCHANT_ID || !NEWEBPAY_HASH_KEY || !NEWEBPAY_HASH_IV) {
-        return res.status(500).json({
-            ok: false,
-            message: "NewebPay env missing",
-        })
     }
 
     const query = new URLSearchParams(tradeData).toString()
