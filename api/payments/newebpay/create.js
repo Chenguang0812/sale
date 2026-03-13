@@ -8,6 +8,11 @@ const {
     NEWEBPAY_HASH_IV,
 } = process.env
 
+console.log("MERCHANT_ID exists:", Boolean(NEWEBPAY_MERCHANT_ID))
+console.log("HASH_KEY exists:", Boolean(NEWEBPAY_HASH_KEY))
+console.log("HASH_IV exists:", Boolean(NEWEBPAY_HASH_IV))
+console.log("cwd:", process.cwd())
+
 function createMpgAesEncrypt(data) {
     const cipher = crypto.createCipheriv(
         "aes-256-cbc",
@@ -73,9 +78,15 @@ export default function handler(req, res) {
         ItemDesc: itemDesc,
         ReturnURL: "https://sale-jade.vercel.app/api/payments/newebpay/return",
         NotifyURL: "https://sale-jade.vercel.app/api/payments/newebpay/notify",
-        CLIENTBACKURL: "https://sale-jade.vercel.app/products",
+        ClientBackURL: "https://sale-jade.vercel.app/products",
         Email: "test@example.com",
         CREDIT: "1",
+    }
+    if (!NEWEBPAY_MERCHANT_ID || !NEWEBPAY_HASH_KEY || !NEWEBPAY_HASH_IV) {
+        return res.status(500).json({
+            ok: false,
+            message: "NewebPay env missing",
+        })
     }
 
     const query = new URLSearchParams(tradeData).toString()

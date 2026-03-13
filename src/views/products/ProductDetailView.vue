@@ -7,11 +7,19 @@ import { createPaymentSession } from "@/services/payment.service";
 
 const route = useRoute();
 
-const slug = computed(() => route.params.slug);
+const slug = computed(() => String(route.params.slug || ""));
 const product = computed(() => getProductBySlug(slug.value));
 
 async function handleCheckout() {
+  console.log("current slug:", slug.value);
+
+  if (!slug.value) {
+    alert("找不到商品 slug");
+    return;
+  }
+
   const result = await createPaymentSession(slug.value);
+  console.log("checkout result:", result);
 
   if (!result?.ok) {
     alert(result?.message || "付款建立失敗");
