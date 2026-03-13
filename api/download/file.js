@@ -1,3 +1,5 @@
+/* eslint-env node */
+
 import fs from "fs";
 import path from "path";
 import { verifyDownloadToken } from "../utils/downloadToken.js";
@@ -23,6 +25,8 @@ export default function handler(req, res) {
 
     const files = {
         "demo-pack": "subtitle-pack-v1.zip",
+        "creator-pack": "creator-pack.zip",
+        "pro-pack": "pro-pack.zip",
     };
 
     const fileName = files[payload.productSlug];
@@ -43,10 +47,8 @@ export default function handler(req, res) {
         });
     }
 
-    res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="${fileName}"`
-    );
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.setHeader("Content-Type", "application/octet-stream");
 
     const stream = fs.createReadStream(filePath);
     stream.pipe(res);

@@ -1,31 +1,32 @@
-import { apiClient } from './api.client'
+import { apiClient } from "./api.client";
 
-export async function createPaymentSession(productId) {
-    console.log('createPaymentSession productId:', productId)
-
+export async function createPaymentSession(productId, email) {
     if (!productId) {
         return {
             ok: false,
-            message: 'productId is required',
-        }
+            message: "productId is required",
+        };
+    }
+
+    if (!email) {
+        return {
+            ok: false,
+            message: "email is required",
+        };
     }
 
     try {
-        const result = await apiClient('/api/payments/newebpay/create', {
-            method: 'POST',
+        return await apiClient("/api/payments/newebpay/create", {
+            method: "POST",
             body: JSON.stringify({
                 productId,
+                email,
             }),
-        })
-
-        console.log('createPaymentSession result:', result)
-        return result
+        });
     } catch (error) {
-        console.error('createPaymentSession error:', error)
-
         return {
             ok: false,
-            message: error.message || 'Create payment session failed',
-        }
+            message: error.message || "Create payment session failed",
+        };
     }
 }

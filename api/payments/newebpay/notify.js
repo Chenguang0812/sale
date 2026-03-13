@@ -1,52 +1,66 @@
 /* eslint-env node */
 
-import fs from "fs"
-import path from "path"
-import { createDownloadToken } from "../utils/downloadToken.js"
+import { decryptTradeInfo, verifyTradeSha } from "./crypto.js";
+import { supabaseAdmin } from "../../../lib/supabaseAdmin.js";
 
-const ordersPath = path.join(process.cwd(), "orders.json")
+export default async function handler(req, res) {
+    try {
+        if (req.method !== "POST") {
+            return res.status(405).send("Method not allowed");
+        }
 
-function hasPurchased(productSlug) {
-    if (!fs.existsSync(ordersPath)) {
-        return false
+        const payload = req.body || {};
+        const tradeInfo = payload.TradeInfo;
+        const tradeSha = payload.TradeSha;
+        const status = payload.Status;
+
+        if (!tradeInfo || !tradeSha) {
+            return res.status(400).send("Missing TradeInfo or TradeSha");
+        }
+
+        if (!verifyTradeSha(tradeInfo, tradeSha)) {
+            return res.status(400).send("Invalid TradeSha");
+        }
+
+        const decrypted = decryptTradeInfo(tradeInfo);
+        const parsed = JSON.parse(decrypted);
+
+        const result = parsed.Result || {};
+        const merchantOrderNo = result.MerchantOrderNo;
+        const tradeNo = result.TradeNo;
+
+        if (!merchantOrderNo) {
+            return res.status(400).send("Missing MerchantOrderNo");
+        }
+
+        if (parsed.Status === "SUCCESS" && status === "SUCCESS") {
+            const { error } = await supabaseAdmin
+                .from("orders")
+                .update({
+                    status: "paid",
+                    trade_no: tradeNo || null,
+                    paid_at: new Date().toISOString(),
+                    raw_notify: parsed,
+                })
+                .eq("merchant_order_no", merchantOrderNo);
+
+            if (error) {
+                console.error("notify update error:", error);
+                return res.status(500).send("DB update failed");
+            }
+        } else {
+            await supabaseAdmin
+                .from("orders")
+                .update({
+                    status: "failed",
+                    raw_notify: parsed,
+                })
+                .eq("merchant_order_no", merchantOrderNo);
+        }
+
+        return res.status(200).send("OK");
+    } catch (error) {
+        console.error("notify error:", error);
+        return res.status(500).send("Notify failed");
     }
-
-    const raw = fs.readFileSync(ordersPath, "utf8")
-    const orders = raw ? JSON.parse(raw) : []
-
-    return orders.some((order) => {
-        return order.productSlug === productSlug && order.paid === true
-    })
-}
-
-export default function handler(req, res) {
-    if (req.method !== "POST") {
-        return res.status(405).json({
-            ok: false,
-            message: "Method not allowed",
-        })
-    }
-
-    const { productSlug } = req.body || {}
-
-    if (!productSlug) {
-        return res.status(400).json({
-            ok: false,
-            message: "productSlug is required",
-        })
-    }
-
-    if (!hasPurchased(productSlug)) {
-        return res.status(403).json({
-            ok: false,
-            message: "Product not purchased",
-        })
-    }
-
-    const token = createDownloadToken(productSlug)
-
-    return res.status(200).json({
-        ok: true,
-        downloadUrl: `/api/download/file?token=${token}`,
-    })
 }

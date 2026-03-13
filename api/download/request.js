@@ -1,51 +1,72 @@
+/* eslint-env node */
 
-import fs from "fs"
-import path from "path"
-import { createDownloadToken } from "../utils/downloadToken.js"
+import { createDownloadToken } from "../utils/downloadToken.js";
+import { supabaseAdmin } from "../../lib/supabaseAdmin.js";
 
-const ordersPath = path.join(process.cwd(), "orders.json")
+export default async function handler(req, res) {
+    try {
+        if (req.method !== "POST") {
+            return res.status(405).json({
+                ok: false,
+                message: "Method not allowed",
+            });
+        }
 
-function hasPurchased(productSlug) {
-    if (!fs.existsSync(ordersPath)) {
-        return false
-    }
+        const { productSlug, email } = req.body || {};
 
-    const raw = fs.readFileSync(ordersPath, "utf8")
-    const orders = raw ? JSON.parse(raw) : []
+        if (!productSlug) {
+            return res.status(400).json({
+                ok: false,
+                message: "productSlug is required",
+            });
+        }
 
-    return orders.some((order) => {
-        return order.productSlug === productSlug && order.paid === true
-    })
-}
+        if (!email) {
+            return res.status(400).json({
+                ok: false,
+                message: "email is required",
+            });
+        }
 
-export default function handler(req, res) {
-    if (req.method !== "POST") {
-        return res.status(405).json({
+        const { data, error } = await supabaseAdmin
+            .from("orders")
+            .select("id, email, product_slug, status")
+            .eq("email", email)
+            .eq("product_slug", productSlug)
+            .eq("status", "paid")
+            .limit(1)
+            .maybeSingle();
+
+        if (error) {
+            return res.status(500).json({
+                ok: false,
+                message: error.message,
+            });
+        }
+
+        if (!data) {
+            return res.status(403).json({
+                ok: false,
+                message: "Product not purchased",
+            });
+        }
+
+        const token = createDownloadToken({
+            email,
+            productSlug,
+            orderId: data.id,
+        });
+
+        return res.status(200).json({
+            ok: true,
+            downloadUrl: `/api/download/file?token=${token}`,
+        });
+    } catch (error) {
+        console.error("download request error:", error);
+
+        return res.status(500).json({
             ok: false,
-            message: "Method not allowed",
-        })
+            message: error.message || "Download request failed",
+        });
     }
-
-    const { productSlug } = req.body || {}
-
-    if (!productSlug) {
-        return res.status(400).json({
-            ok: false,
-            message: "productSlug is required",
-        })
-    }
-
-    if (!hasPurchased(productSlug)) {
-        return res.status(403).json({
-            ok: false,
-            message: "Product not purchased",
-        })
-    }
-
-    const token = createDownloadToken(productSlug)
-
-    return res.status(200).json({
-        ok: true,
-        downloadUrl: `/api/download/file?token=${token}`,
-    })
 }

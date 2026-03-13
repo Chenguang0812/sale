@@ -9,11 +9,11 @@ import BaseContainer from "@/components/common/BaseContainer.vue";
         <div class="text-lg font-semibold">Studio Market</div>
 
         <nav class="flex gap-6 text-sm text-white/70">
-          <RouterLink to="/">Home</RouterLink>
-          <RouterLink to="/products">Products</RouterLink>
-          <RouterLink to="/about">About</RouterLink>
+          <RouterLink to="/">首頁</RouterLink>
+          <RouterLink to="/products">商品</RouterLink>
+          <RouterLink to="/about">關於</RouterLink>
           <RouterLink to="/faq">FAQ</RouterLink>
-          <RouterLink to="/account">Account</RouterLink>
+          <RouterLink to="/account">帳號</RouterLink>
         </nav>
       </div>
     </BaseContainer>

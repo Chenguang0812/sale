@@ -11,11 +11,11 @@ import BaseButton from "@/components/common/BaseButton.vue";
 
       <h1 class="text-5xl font-semibold leading-tight">
         20 個爆款文字動畫，
-        <span class="text-white/60">讓剪輯更快更有質感</span>
+        <span class="text-white/60">剪輯更有效率</span>
       </h1>
 
       <p class="mt-6 max-w-2xl text-lg leading-8 text-white/65">
-        為剪輯師、自媒體與內容創作者設計的文字動畫包。
+        為剪輯師、自媒體與內容創作者設計的文字特效包。
         先從最常用、最容易成交的版本開始，後續再擴充完整版本與 Pro 方案。
       </p>
 

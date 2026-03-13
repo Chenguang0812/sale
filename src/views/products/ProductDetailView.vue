@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useRoute } from "vue-router";
 import BaseButton from "@/components/common/BaseButton.vue";
 import { getProductBySlug } from "@/services/product.service";
@@ -9,17 +9,20 @@ const route = useRoute();
 
 const slug = computed(() => String(route.params.slug || ""));
 const product = computed(() => getProductBySlug(slug.value));
+const email = ref("");
 
 async function handleCheckout() {
-  console.log("current slug:", slug.value);
-
   if (!slug.value) {
     alert("找不到商品 slug");
     return;
   }
 
-  const result = await createPaymentSession(slug.value);
-  console.log("checkout result:", result);
+  if (!email.value) {
+    alert("請先輸入 email");
+    return;
+  }
+
+  const result = await createPaymentSession(slug.value, email.value);
 
   if (!result?.ok) {
     alert(result?.message || "付款建立失敗");
@@ -74,11 +77,21 @@ async function handleCheckout() {
 
         <div class="mt-8 text-3xl font-semibold">NT$ {{ product.price }}</div>
 
+        <div class="mt-6">
+          <label class="mb-2 block text-sm text-white/70">購買 Email</label>
+          <input
+            v-model="email"
+            type="email"
+            placeholder="you@example.com"
+            class="w-full rounded-2xl border border-white/10 bg-neutral-900 px-4 py-3 text-white outline-none"
+          />
+        </div>
+
         <div class="relative z-50 mt-8 flex gap-4">
-          <BaseButton @click="handleCheckout"> 立即購買 </BaseButton>
+          <BaseButton @click="handleCheckout">立即購買</BaseButton>
 
           <RouterLink to="/products">
-            <BaseButton variant="secondary"> 返回商品列表 </BaseButton>
+            <BaseButton variant="secondary">返回商品列表</BaseButton>
           </RouterLink>
         </div>
       </div>

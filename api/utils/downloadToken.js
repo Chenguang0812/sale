@@ -1,23 +1,19 @@
-import jwt from "jsonwebtoken"
+/* eslint-env node */
 
-const SECRET = process.env.DOWNLOAD_SECRET || "download-secret"
+import jwt from "jsonwebtoken";
 
-export function createDownloadToken(productSlug) {
-    return jwt.sign(
-        {
-            productSlug,
-        },
-        SECRET,
-        {
-            expiresIn: "30s",
-        }
-    )
+const SECRET = process.env.DOWNLOAD_SECRET;
+
+export function createDownloadToken(data) {
+    return jwt.sign(data, SECRET, {
+        expiresIn: "5m",
+    });
 }
 
 export function verifyDownloadToken(token) {
     try {
-        return jwt.verify(token, SECRET)
+        return jwt.verify(token, SECRET);
     } catch {
-        return null
+        return null;
     }
 }
