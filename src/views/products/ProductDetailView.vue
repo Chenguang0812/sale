@@ -34,9 +34,9 @@ async function handleCheckout() {
   form.action = result.payUrl;
 
   const fields = {
-    MerchantID: result.merchantId,
-    TradeInfo: result.tradeInfo,
-    TradeSha: result.tradeSha,
+    MerID: result.merId,
+    EncryptInfo: result.encryptInfo,
+    HashInfo: result.hashInfo,
     Version: result.version,
   };
 
