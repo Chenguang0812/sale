@@ -1,29 +1,11 @@
 /* eslint-env node */
-import {
-    assertCryptoConfig,
-    createHashInfo,
-    encryptTradeInfo,
-} from "./crypto.js";
+import { encryptTradeInfo, createHashInfo } from "./crypto.js";
 import { supabaseAdmin } from "../../../lib/supabaseAdmin.js";
+import { getProductConfig } from "../../../lib/catalog.js";
 
 const { PAYUNI_MERCHANT_ID, PAYUNI_API_URL, PAYUNI_TYPE, VERCEL_URL } = process.env;
 
 const PAYUNI_VERSION = "1.0";
-
-const PRODUCTS = {
-    "demo-pack": {
-        amount: 299,
-        title: "20 Viral Subtitle Animations",
-    },
-    "creator-pack": {
-        amount: 499,
-        title: "Creator Pack",
-    },
-    "pro-pack": {
-        amount: 899,
-        title: "Pro Pack",
-    },
-};
 
 function buildBaseUrl(req) {
     if (VERCEL_URL) return `https://${VERCEL_URL}`;
@@ -41,32 +23,29 @@ function getPayuniUrl() {
         : "https://api.payuni.com.tw/api/upp";
 }
 
-function createMerTradeNo(productId) {
-    const safe = String(productId || "product")
+function normalizeEmail(email) {
+    return String(email || "").trim().toLowerCase();
+}
+
+function createMerchantOrderNo(productId) {
+    const safeProductId = String(productId || "product")
         .replace(/[^a-zA-Z0-9_]/g, "_")
-        .slice(0, 18);
+        .slice(0, 14);
 
-    const stamp = Date.now().toString().slice(-11);
-    return `${safe}_${stamp}`.slice(0, 30);
+    const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)
+        .toString()
+        .padStart(3, "0")}`.slice(-13);
+
+    return `${safeProductId}_${suffix}`.slice(0, 30);
 }
 
-function parseRawBody(raw, contentType = "") {
-    if (!raw) return {};
-
-    if (String(contentType).includes("application/json")) {
-        return JSON.parse(raw);
-    }
-
-    return Object.fromEntries(new URLSearchParams(raw));
-}
-
-async function readRequestBody(req) {
+async function readJsonBody(req) {
     if (req.body && typeof req.body === "object" && !Buffer.isBuffer(req.body)) {
         return req.body;
     }
 
     if (typeof req.body === "string") {
-        return parseRawBody(req.body, req.headers["content-type"]);
+        return JSON.parse(req.body || "{}");
     }
 
     const chunks = [];
@@ -74,7 +53,7 @@ async function readRequestBody(req) {
         chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
     }
 
-    return parseRawBody(Buffer.concat(chunks).toString("utf8"), req.headers["content-type"]);
+    return JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
 }
 
 export default async function handler(req, res) {
@@ -87,11 +66,9 @@ export default async function handler(req, res) {
             return res.status(500).json({ ok: false, message: "PAYUNI_MERCHANT_ID missing" });
         }
 
-        assertCryptoConfig();
-
-        const body = await readRequestBody(req);
+        const body = await readJsonBody(req);
         const productId = String(body?.productId || "").trim();
-        const email = String(body?.email || "").trim().toLowerCase();
+        const email = normalizeEmail(body?.email);
 
         if (!productId) {
             return res.status(400).json({ ok: false, message: "productId is required" });
@@ -101,19 +78,19 @@ export default async function handler(req, res) {
             return res.status(400).json({ ok: false, message: "email is required" });
         }
 
-        const product = PRODUCTS[productId];
+        const product = getProductConfig(productId);
         if (!product) {
             return res.status(400).json({ ok: false, message: "Unknown productId" });
         }
 
-        const merchantOrderNo = createMerTradeNo(productId);
+        const merchantOrderNo = createMerchantOrderNo(productId);
         const baseUrl = buildBaseUrl(req);
 
         const { error: insertError } = await supabaseAdmin.from("orders").insert({
             merchant_order_no: merchantOrderNo,
             email,
-            product_slug: productId,
-            amount: product.amount,
+            product_slug: product.slug,
+            amount: product.price,
             status: "pending",
         });
 
@@ -127,7 +104,7 @@ export default async function handler(req, res) {
         const encryptPayload = {
             MerID: PAYUNI_MERCHANT_ID,
             MerTradeNo: merchantOrderNo,
-            TradeAmt: String(product.amount),
+            TradeAmt: String(product.price),
             Timestamp: String(Math.floor(Date.now() / 1000)),
             ReturnURL: `${baseUrl}/api/payments/payuni/return`,
             NotifyURL: `${baseUrl}/api/payments/payuni/notify`,

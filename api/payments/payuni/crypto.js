@@ -3,7 +3,7 @@ import crypto from "crypto";
 
 const { PAYUNI_HASH_KEY, PAYUNI_HASH_IV } = process.env;
 
-export function assertCryptoConfig() {
+function assertCryptoConfig() {
     if (!PAYUNI_HASH_KEY || !PAYUNI_HASH_IV) {
         throw new Error("PAYUNI crypto env missing");
     }
@@ -41,10 +41,10 @@ function normalizeEncryptInfo(input) {
 
 /**
  * 對齊 PAYUNi PHP SDK:
- * 1. 將 http_build_query(...) 的結果做 aes-256-gcm
- * 2. cipher text 先轉 base64
- * 3. auth tag 也轉 base64
- * 4. 用 `${encryptedBase64}:::${tagBase64}` 組字串
+ * 1. http_build_query(...) => aes-256-gcm
+ * 2. cipher text 轉 base64
+ * 3. auth tag 轉 base64
+ * 4. 用 encryptedBase64:::tagBase64 串起來
  * 5. 最後整串再轉 hex
  */
 export function encryptTradeInfo(input) {

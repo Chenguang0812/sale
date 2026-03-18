@@ -9,3 +9,13 @@ export async function requestDownload(productSlug, email) {
         }),
     });
 }
+
+export async function requestCheckoutDownload(order, access) {
+    return await apiClient("/api/download/request", {
+        method: "POST",
+        body: JSON.stringify({
+            order,
+            access,
+        }),
+    });
+}

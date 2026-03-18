@@ -83,7 +83,6 @@ export default async function handler(req, res) {
                     status: "paid",
                     trade_no: tradeNo,
                     paid_at: new Date().toISOString(),
-                    raw_notify: { payload, decrypted },
                 })
                 .eq("merchant_order_no", merchantOrderNo);
 
@@ -96,7 +95,6 @@ export default async function handler(req, res) {
                 .from("orders")
                 .update({
                     status: "failed",
-                    raw_notify: { payload, decrypted },
                 })
                 .eq("merchant_order_no", merchantOrderNo)
                 .neq("status", "paid");

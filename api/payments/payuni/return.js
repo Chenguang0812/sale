@@ -1,6 +1,7 @@
 /* eslint-env node */
 import { decryptTradeInfo, verifyHashInfo } from "./crypto.js";
 import { supabaseAdmin } from "../../../lib/supabaseAdmin.js";
+import { createCheckoutAccessToken } from "../../utils/checkoutAccessToken.js";
 
 const { VERCEL_URL } = process.env;
 
@@ -80,30 +81,45 @@ export default async function handler(req, res) {
         const tradeNo = decrypted.TradeNo || null;
         const paid = isPaid(payloadStatus, decrypted);
 
-        if (merchantOrderNo) {
-            if (paid) {
-                await supabaseAdmin
-                    .from("orders")
-                    .update({
-                        status: "paid",
-                        trade_no: tradeNo,
-                        paid_at: new Date().toISOString(),
-                        raw_return: { payload, decrypted },
-                    })
-                    .eq("merchant_order_no", merchantOrderNo);
-            } else {
-                await supabaseAdmin
-                    .from("orders")
-                    .update({
-                        status: "failed",
-                        raw_return: { payload, decrypted },
-                    })
-                    .eq("merchant_order_no", merchantOrderNo)
-                    .neq("status", "paid");
-            }
+        if (!merchantOrderNo) {
+            return res.redirect(`${baseUrl}/checkout/fail`);
         }
 
-        return res.redirect(`${baseUrl}${paid ? "/checkout/success" : "/checkout/fail"}`);
+        if (paid) {
+            const { error } = await supabaseAdmin
+                .from("orders")
+                .update({
+                    status: "paid",
+                    trade_no: tradeNo,
+                    paid_at: new Date().toISOString(),
+                })
+                .eq("merchant_order_no", merchantOrderNo);
+
+            if (error) {
+                console.error("payuni return db error:", error);
+                return res.redirect(`${baseUrl}/checkout/fail`);
+            }
+
+            const access = createCheckoutAccessToken({
+                merchantOrderNo,
+            });
+
+            return res.redirect(
+                `${baseUrl}/checkout/success?order=${encodeURIComponent(
+                    merchantOrderNo
+                )}&access=${encodeURIComponent(access)}`
+            );
+        }
+
+        await supabaseAdmin
+            .from("orders")
+            .update({
+                status: "failed",
+            })
+            .eq("merchant_order_no", merchantOrderNo)
+            .neq("status", "paid");
+
+        return res.redirect(`${baseUrl}/checkout/fail`);
     } catch (error) {
         console.error("payuni return error:", error);
         return res.redirect(`${baseUrl}/checkout/fail`);
