@@ -6,8 +6,10 @@ import SectionTitle from "@/components/common/SectionTitle.vue";
   <section class="py-10">
     <SectionTitle
       kicker="About"
-      title="關於 Studio Market"
-      description="Studio Market 專注於為剪輯師與內容創作者提供高效率的 Premiere Pro 動畫模板、字卡設計與後續教學內容。第一階段先從最常用、最容易成交的動畫包開始，後續再逐步擴充成完整的素材品牌。"
+      title="關於CG Studio"
+      description="CG Studio是從2025年開始經營的影像剪輯工作室，協助過百萬訂閱Youtuber、節目等影片後製剪輯，
+      在影片後製方面有多5年經驗，在2026年致力於製作剪輯素材、剪輯教學，由CG Studio負責人晨光來負責此專案，
+      加入CG Studio都需要經過剪輯培訓的SOP，所以在教育方面我們有相當多的經驗。"
     />
 
     <div class="mt-6 max-w-3xl">

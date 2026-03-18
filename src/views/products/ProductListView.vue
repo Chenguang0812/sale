@@ -12,7 +12,7 @@ const products = getAllProducts();
       <SectionTitle
         kicker="Products"
         title="商品列表"
-        description="先上架最容易成交的動畫包，後續再擴充完整版、Pro 版與剪輯教學。"
+        description="跟據不同人的需求，我們提出了三個方案選擇。"
       />
     </div>
 

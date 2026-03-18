@@ -1,4 +1,4 @@
-/* eslint-env node */
+
 import crypto from "crypto";
 
 const { PAYUNI_HASH_KEY, PAYUNI_HASH_IV } = process.env;

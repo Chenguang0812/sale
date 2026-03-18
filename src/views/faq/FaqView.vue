@@ -28,7 +28,7 @@ import SectionTitle from "@/components/common/SectionTitle.vue";
       <div class="rounded-2xl border border-white/10 bg-neutral-900 p-6">
         <h2 class="text-xl font-semibold">之後會有更多商品嗎？</h2>
         <p class="mt-3 leading-7 text-white/65">
-          會，後續會加入完整版、Pro 版、字卡模板與剪輯教學內容。
+          會，後續會加入剪輯後製教學等商品，希望對剪輯市場有所幫助。
         </p>
       </div>
     </div>
