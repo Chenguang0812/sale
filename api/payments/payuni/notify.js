@@ -12,7 +12,6 @@ export default async function handler(req, res) {
         const payload = req.body || {};
         const tradeInfo = payload.TradeInfo;
         const tradeSha = payload.TradeSha;
-        const status = payload.Status;
 
         if (!tradeInfo || !tradeSha) {
             return res.status(400).send("Missing TradeInfo or TradeSha");
@@ -33,7 +32,7 @@ export default async function handler(req, res) {
             return res.status(400).send("Missing MerchantOrderNo");
         }
 
-        if (parsed.Status === "SUCCESS" && status === "SUCCESS") {
+        if (parsed.Status === "SUCCESS") {
             const { error } = await supabaseAdmin
                 .from("orders")
                 .update({
@@ -45,7 +44,7 @@ export default async function handler(req, res) {
                 .eq("merchant_order_no", merchantOrderNo);
 
             if (error) {
-                console.error("notify update error:", error);
+                console.error("payuni notify db error:", error);
                 return res.status(500).send("DB update failed");
             }
         } else {
@@ -60,7 +59,7 @@ export default async function handler(req, res) {
 
         return res.status(200).send("OK");
     } catch (error) {
-        console.error("notify error:", error);
+        console.error("payuni notify error:", error);
         return res.status(500).send("Notify failed");
     }
 }

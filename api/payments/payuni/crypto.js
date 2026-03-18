@@ -3,15 +3,15 @@
 import crypto from "crypto";
 
 const {
-    NEWEBPAY_HASH_KEY,
-    NEWEBPAY_HASH_IV,
+    PAYUNI_HASH_KEY,
+    PAYUNI_HASH_IV,
 } = process.env;
 
 export function encryptTradeInfo(data) {
     const cipher = crypto.createCipheriv(
         "aes-256-cbc",
-        NEWEBPAY_HASH_KEY,
-        NEWEBPAY_HASH_IV
+        PAYUNI_HASH_KEY,
+        PAYUNI_HASH_IV
     );
 
     cipher.setAutoPadding(true);
@@ -25,8 +25,8 @@ export function encryptTradeInfo(data) {
 export function decryptTradeInfo(tradeInfo) {
     const decipher = crypto.createDecipheriv(
         "aes-256-cbc",
-        NEWEBPAY_HASH_KEY,
-        NEWEBPAY_HASH_IV
+        PAYUNI_HASH_KEY,
+        PAYUNI_HASH_IV
     );
 
     decipher.setAutoPadding(true);
@@ -38,7 +38,7 @@ export function decryptTradeInfo(tradeInfo) {
 }
 
 export function createTradeSha(tradeInfo) {
-    const plainText = `HashKey=${NEWEBPAY_HASH_KEY}&${tradeInfo}&HashIV=${NEWEBPAY_HASH_IV}`;
+    const plainText = `HashKey=${PAYUNI_HASH_KEY}&${tradeInfo}&HashIV=${PAYUNI_HASH_IV}`;
     return crypto.createHash("sha256").update(plainText).digest("hex").toUpperCase();
 }
 

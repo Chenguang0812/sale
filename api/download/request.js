@@ -1,5 +1,3 @@
-/* eslint-env node */
-
 import { createDownloadToken } from "../utils/downloadToken.js";
 import { supabaseAdmin } from "../../lib/supabaseAdmin.js";
 
@@ -14,17 +12,10 @@ export default async function handler(req, res) {
 
         const { productSlug, email } = req.body || {};
 
-        if (!productSlug) {
+        if (!productSlug || !email) {
             return res.status(400).json({
                 ok: false,
-                message: "productSlug is required",
-            });
-        }
-
-        if (!email) {
-            return res.status(400).json({
-                ok: false,
-                message: "email is required",
+                message: "productSlug and email are required",
             });
         }
 

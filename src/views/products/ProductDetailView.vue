@@ -31,7 +31,7 @@ async function handleCheckout() {
 
   const form = document.createElement("form");
   form.method = "POST";
-  form.action = result.mpgUrl;
+  form.action = result.payUrl;
 
   const fields = {
     MerchantID: result.merchantId,

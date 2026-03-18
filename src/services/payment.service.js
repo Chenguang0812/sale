@@ -16,7 +16,7 @@ export async function createPaymentSession(productId, email) {
     }
 
     try {
-        return await apiClient("/api/payments/newebpay/create", {
+        return await apiClient("/api/payments/payuni/create", {
             method: "POST",
             body: JSON.stringify({
                 productId,

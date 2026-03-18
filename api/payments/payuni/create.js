@@ -4,9 +4,10 @@ import { encryptTradeInfo, createTradeSha } from "./crypto.js";
 import { supabaseAdmin } from "../../../lib/supabaseAdmin.js";
 
 const {
-    NEWEBPAY_MERCHANT_ID,
-    NEWEBPAY_HASH_KEY,
-    NEWEBPAY_HASH_IV,
+    PAYUNI_MERCHANT_ID,
+    PAYUNI_HASH_KEY,
+    PAYUNI_HASH_IV,
+    PAYUNI_API_URL,
     VERCEL_URL,
 } = process.env;
 
@@ -32,10 +33,10 @@ export default async function handler(req, res) {
             });
         }
 
-        if (!NEWEBPAY_MERCHANT_ID || !NEWEBPAY_HASH_KEY || !NEWEBPAY_HASH_IV) {
+        if (!PAYUNI_MERCHANT_ID || !PAYUNI_HASH_KEY || !PAYUNI_HASH_IV || !PAYUNI_API_URL) {
             return res.status(500).json({
                 ok: false,
-                message: "NewebPay env missing",
+                message: "PAYUNI env missing",
             });
         }
 
@@ -90,15 +91,15 @@ export default async function handler(req, res) {
         }
 
         const tradeData = {
-            MerchantID: NEWEBPAY_MERCHANT_ID,
+            MerchantID: PAYUNI_MERCHANT_ID,
             RespondType: "JSON",
             TimeStamp: Math.floor(Date.now() / 1000).toString(),
-            Version: "2.0",
+            Version: "1.0",
             MerchantOrderNo: merchantOrderNo,
             Amt: amt.toString(),
             ItemDesc: itemDesc,
-            ReturnURL: `${baseUrl}/api/payments/newebpay/return`,
-            NotifyURL: `${baseUrl}/api/payments/newebpay/notify`,
+            ReturnURL: `${baseUrl}/api/payments/payuni/return`,
+            NotifyURL: `${baseUrl}/api/payments/payuni/notify`,
             ClientBackURL: `${baseUrl}/products/${productId}`,
             Email: email,
             CREDIT: "1",
@@ -110,15 +111,15 @@ export default async function handler(req, res) {
 
         return res.status(200).json({
             ok: true,
-            merchantId: NEWEBPAY_MERCHANT_ID,
-            version: "2.0",
+            merchantId: PAYUNI_MERCHANT_ID,
+            version: "1.0",
             tradeInfo,
             tradeSha,
-            mpgUrl: "https://core.newebpay.com/MPG/mpg_gateway",
+            payUrl: PAYUNI_API_URL,
             merchantOrderNo,
         });
     } catch (error) {
-        console.error("create payment error:", error);
+        console.error("payuni create error:", error);
 
         return res.status(500).json({
             ok: false,

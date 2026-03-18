@@ -14,7 +14,6 @@ function buildBaseUrl(req) {
 export default function handler(req, res) {
     try {
         const baseUrl = buildBaseUrl(req);
-
         const payload = req.method === "POST" ? req.body || {} : req.query || {};
         const tradeInfo = payload.TradeInfo;
         const tradeSha = payload.TradeSha;
@@ -36,7 +35,7 @@ export default function handler(req, res) {
 
         return res.redirect(`${baseUrl}/checkout/fail`);
     } catch (error) {
-        console.error("return error:", error);
+        console.error("payuni return error:", error);
         return res.redirect("/checkout/fail");
     }
 }
