@@ -6,7 +6,7 @@ import BaseContainer from "@/components/common/BaseContainer.vue";
   <header class="border-b border-white/10 bg-neutral-950">
     <BaseContainer>
       <div class="flex items-center justify-between py-4">
-        <div class="text-lg font-semibold">CG Studio</div>
+        <a href="/" class="text-lg font-semibold">CG Studio</a>
 
         <nav class="flex gap-6 text-sm text-white/70">
           <RouterLink to="/">首頁</RouterLink>
