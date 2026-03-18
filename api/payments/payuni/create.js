@@ -33,7 +33,7 @@ export default async function handler(req, res) {
             });
         }
 
-        if (!PAYUNI_MERCHANT_ID || !PAYUNI_HASH_KEY || !PAYUNI_HASH_IV || !PAYUNI_API_URL) {
+        if (!PAYUNI_MERCHANT_ID || !PAYUNI_HASH_KEY || !PAYUNI_HASH_IV) {
             return res.status(500).json({
                 ok: false,
                 message: "PAYUNI env missing",
@@ -115,7 +115,7 @@ export default async function handler(req, res) {
             version: "1.0",
             tradeInfo,
             tradeSha,
-            payUrl: PAYUNI_API_URL,
+            payUrl: "https://sandbox.payuni.com.tw/MPG/mpg_gateway",
             merchantOrderNo,
         });
     } catch (error) {
