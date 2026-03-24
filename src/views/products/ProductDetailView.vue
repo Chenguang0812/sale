@@ -61,7 +61,7 @@ async function handleCheckout() {
           class="rounded-2xl border border-white/10 bg-neutral-800 overflow-hidden aspect-video"
         >
           <img
-            src="D:\code\販賣網站\sale\src\assets\images\666.png"
+            src="/src/assets/images/666.png"
             alt="Product Preview"
             class="w-full h-full object-cover"
           />
