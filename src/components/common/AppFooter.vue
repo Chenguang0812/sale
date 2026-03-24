@@ -7,6 +7,7 @@ import BaseContainer from "@/components/common/BaseContainer.vue";
     <BaseContainer>
       <div class="flex items-center justify-between py-4 text-sm text-white/60">
         <div>© 2026 Studio Market. All rights reserved.</div>
+        <div>客服信箱：cgstduio0812@gmail.com</div>
 
         <div class="flex gap-4">
           <RouterLink to="/about">About</RouterLink>

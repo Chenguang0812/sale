@@ -58,9 +58,13 @@ async function handleCheckout() {
     <div class="grid gap-10 lg:grid-cols-2">
       <div class="rounded-3xl border border-white/10 bg-neutral-900 p-8">
         <div
-          class="flex aspect-video items-center justify-center rounded-2xl border border-white/10 bg-neutral-800 text-white/40"
+          class="rounded-2xl border border-white/10 bg-neutral-800 overflow-hidden aspect-video"
         >
-          Product Preview
+          <img
+            src="D:\code\販賣網站\sale\src\assets\images\666.png"
+            alt="Product Preview"
+            class="w-full h-full object-cover"
+          />
         </div>
       </div>
 
