@@ -129,39 +129,6 @@ export default async function handler(req, res) {
 
         console.log("storagePath:", product.storagePath);
 
-        const { data: storageObjects, error: storageObjectsError } = await supabaseAdmin
-            .schema("storage")
-            .from("objects")
-            .select("bucket_id, name")
-            .eq("bucket_id", PRIVATE_BUCKET);
-
-        console.log("STORAGE OBJECTS error:", storageObjectsError);
-        console.log("STORAGE OBJECTS:", JSON.stringify(storageObjects));
-
-        if (storageObjectsError) {
-            return res.status(500).json({
-                ok: false,
-                message: storageObjectsError.message || "Read storage objects failed",
-                details: storageObjectsError,
-            });
-        }
-
-        const objectExists = storageObjects?.some(
-            (object) => object.name === product.storagePath
-        );
-
-        console.log("OBJECT matched:", objectExists);
-
-        if (!objectExists) {
-            return res.status(404).json({
-                ok: false,
-                message: "Object not found in storage.objects",
-                bucket: PRIVATE_BUCKET,
-                expectedPath: product.storagePath,
-                existingObjects: storageObjects,
-            });
-        }
-
         const { data, error } = await supabaseAdmin.storage
             .from(PRIVATE_BUCKET)
             .createSignedUrl(product.storagePath, 300, {
@@ -176,6 +143,9 @@ export default async function handler(req, res) {
                 ok: false,
                 message: error?.message || "Create signed url failed",
                 details: error,
+                bucket: PRIVATE_BUCKET,
+                storagePath: product.storagePath,
+                fileName: product.fileName,
             });
         }
 
