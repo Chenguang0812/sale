@@ -61,7 +61,8 @@ export default async function handler(req, res) {
 
         if (!orderNo) {
             console.log("FAIL: missing order in query");
-            return res.redirect(`${baseUrl}/checkout/fail`);
+            // ✅ 改成 302，強制 GET redirect
+            return res.redirect(302, `${baseUrl}/checkout/fail`);
         }
 
         const { data, error } = await pollOrderStatus(orderNo);
@@ -71,13 +72,15 @@ export default async function handler(req, res) {
 
         if (error || !data) {
             console.log("FAIL: order not found or db error");
-            return res.redirect(`${baseUrl}/checkout/fail`);
+            return res.redirect(302, `${baseUrl}/checkout/fail`);
         }
 
         if (data.status === "paid") {
             console.log("SUCCESS: order is paid");
             const access = createCheckoutAccessToken({ merchantOrderNo: orderNo });
+            // ✅ 302 強制 GET，瀏覽器不會帶著 POST method 過來
             return res.redirect(
+                302,
                 `${baseUrl}/checkout/success?order=${encodeURIComponent(orderNo)}&access=${encodeURIComponent(access)}`
             );
         }
@@ -85,14 +88,15 @@ export default async function handler(req, res) {
         if (data.status === "pending") {
             console.log("TIMEOUT: order still pending, redirect to processing");
             return res.redirect(
+                302,
                 `${baseUrl}/checkout/processing?order=${encodeURIComponent(orderNo)}`
             );
         }
 
         console.log("FAIL: order status is", data.status);
-        return res.redirect(`${baseUrl}/checkout/fail`);
+        return res.redirect(302, `${baseUrl}/checkout/fail`);
     } catch (error) {
         console.error("payuni return error:", error);
-        return res.redirect(`${baseUrl}/checkout/fail`);
+        return res.redirect(302, `${baseUrl}/checkout/fail`);
     }
 }
