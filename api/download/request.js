@@ -101,14 +101,15 @@ export default async function handler(req, res) {
 
         const product = getProductConfig(paidOrder.product_slug);
 
-        console.log("paidOrder.product_slug:", paidOrder.product_slug);
-        console.log("product:", JSON.stringify(product));
-        console.log("storagePath:", product?.storagePath);
+        console.log("PRIVATE_BUCKET:", PRIVATE_BUCKET);
+        console.log("SIGNED URL data:", data);
+        console.log("SIGNED URL error:", error);
 
-        if (!product) {
-            return res.status(404).json({
+        if (error || !data?.signedUrl) {
+            return res.status(500).json({
                 ok: false,
-                message: "Product config not found",
+                message: error?.message || "Create signed url failed",
+                details: error,
             });
         }
 
@@ -129,7 +130,7 @@ export default async function handler(req, res) {
             ok: true,
             downloadUrl: data.signedUrl,
             fileName: product.fileName,
-            expiresIn: 60,
+            expiresIn: 300,
         });
     } catch (error) {
         console.error("download request error:", error);
