@@ -6,6 +6,7 @@ import { createCheckoutAccessToken } from "../../utils/checkoutAccessToken.js";
 const { VERCEL_URL } = process.env;
 
 function buildBaseUrl(req) {
+    if (process.env.SITE_URL) return process.env.SITE_URL;
     if (VERCEL_URL) return `https://${VERCEL_URL}`;
 
     const protocol = req.headers["x-forwarded-proto"] || "http";
@@ -58,7 +59,8 @@ function isPaid(payloadStatus, decrypted) {
         .filter(Boolean)
         .map((value) => String(value).toUpperCase());
 
-    return candidates.includes("SUCCESS");
+    // PAYUNi 成功狀態：Status="1" 或 "SUCCESS"
+    return candidates.includes("SUCCESS") || candidates.includes("1");
 }
 
 export default async function handler(req, res) {
