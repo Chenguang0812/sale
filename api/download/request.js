@@ -15,6 +15,7 @@ async function readJsonBody(req) {
     }
 
     const chunks = [];
+
     for await (const chunk of req) {
         chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
     }
@@ -36,7 +37,10 @@ async function findPaidOrderByEmail(productSlug, email) {
         .limit(1)
         .maybeSingle();
 
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
+
     return data;
 }
 
@@ -49,7 +53,10 @@ async function findPaidOrderByMerchantOrderNo(merchantOrderNo) {
         .limit(1)
         .maybeSingle();
 
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
+
     return data;
 }
 
@@ -63,6 +70,7 @@ export default async function handler(req, res) {
         }
 
         const body = await readJsonBody(req);
+
         const order = String(body?.order || "").trim();
         const access = String(body?.access || "").trim();
         const productSlug = String(body?.productSlug || "").trim();
@@ -101,7 +109,32 @@ export default async function handler(req, res) {
 
         const product = getProductConfig(paidOrder.product_slug);
 
+        console.log("paidOrder.product_slug:", paidOrder.product_slug);
+        console.log("product:", JSON.stringify(product));
         console.log("PRIVATE_BUCKET:", PRIVATE_BUCKET);
+
+        if (!product) {
+            return res.status(404).json({
+                ok: false,
+                message: "Product config not found",
+            });
+        }
+
+        if (!product.storagePath || !product.fileName) {
+            return res.status(500).json({
+                ok: false,
+                message: "Product file config is invalid",
+            });
+        }
+
+        console.log("storagePath:", product.storagePath);
+
+        const { data, error } = await supabaseAdmin.storage
+            .from(PRIVATE_BUCKET)
+            .createSignedUrl(product.storagePath, 300, {
+                download: product.fileName,
+            });
+
         console.log("SIGNED URL data:", data);
         console.log("SIGNED URL error:", error);
 
@@ -110,19 +143,6 @@ export default async function handler(req, res) {
                 ok: false,
                 message: error?.message || "Create signed url failed",
                 details: error,
-            });
-        }
-
-        const { data, error } = await supabaseAdmin.storage
-            .from(PRIVATE_BUCKET)
-            .createSignedUrl(product.storagePath, 300, {
-                download: product.fileName,
-            });
-
-        if (error || !data?.signedUrl) {
-            return res.status(500).json({
-                ok: false,
-                message: error?.message || "Create signed url failed",
             });
         }
 
@@ -137,7 +157,7 @@ export default async function handler(req, res) {
 
         return res.status(500).json({
             ok: false,
-            message: error.message || "Download request failed",
+            message: error?.message || "Download request failed",
         });
     }
 }
