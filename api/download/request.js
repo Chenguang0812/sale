@@ -129,40 +129,36 @@ export default async function handler(req, res) {
 
         console.log("storagePath:", product.storagePath);
 
-        const folder = product.storagePath.split("/").slice(0, -1).join("/");
-        const expectedFileName = product.storagePath.split("/").pop();
+        const { data: storageObjects, error: storageObjectsError } = await supabaseAdmin
+            .schema("storage")
+            .from("objects")
+            .select("bucket_id, name")
+            .eq("bucket_id", PRIVATE_BUCKET);
 
-        const { data: files, error: listError } = await supabaseAdmin.storage
-            .from(PRIVATE_BUCKET)
-            .list(folder);
+        console.log("STORAGE OBJECTS error:", storageObjectsError);
+        console.log("STORAGE OBJECTS:", JSON.stringify(storageObjects));
 
-        console.log("LIST folder:", folder);
-        console.log("EXPECTED fileName:", expectedFileName);
-        console.log("LIST files:", JSON.stringify(files));
-        console.log("LIST error:", listError);
-        console.log(
-            "FILE matched:",
-            files?.some((file) => file.name === expectedFileName)
-        );
-
-        if (listError) {
+        if (storageObjectsError) {
             return res.status(500).json({
                 ok: false,
-                message: listError.message || "List storage folder failed",
-                details: listError,
+                message: storageObjectsError.message || "Read storage objects failed",
+                details: storageObjectsError,
             });
         }
 
-        const fileExists = files?.some((file) => file.name === expectedFileName);
+        const objectExists = storageObjects?.some(
+            (object) => object.name === product.storagePath
+        );
 
-        if (!fileExists) {
+        console.log("OBJECT matched:", objectExists);
+
+        if (!objectExists) {
             return res.status(404).json({
                 ok: false,
-                message: "Object not found in storage folder",
+                message: "Object not found in storage.objects",
                 bucket: PRIVATE_BUCKET,
-                folder,
-                expectedFileName,
-                files,
+                expectedPath: product.storagePath,
+                existingObjects: storageObjects,
             });
         }
 
