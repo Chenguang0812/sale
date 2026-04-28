@@ -10,7 +10,7 @@ const products = [
         id: 'p2',
         slug: 'creator-pack',
         title: '20個特效預設',
-        price: 350,
+        price: 300,
         description: '提供更多常用動畫與更完整的商業使用情境，適合穩定接案與高頻剪輯工作流。',
     },
     {
