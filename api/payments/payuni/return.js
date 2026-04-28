@@ -59,31 +59,56 @@ function isPaid(payloadStatus, decrypted) {
         .filter(Boolean)
         .map((value) => String(value).toUpperCase());
 
-    // PAYUNi 成功狀態：Status="1" 或 "SUCCESS"
+    console.log("isPaid candidates:", candidates);
+
     return candidates.includes("SUCCESS") || candidates.includes("1");
 }
 
 export default async function handler(req, res) {
     const baseUrl = buildBaseUrl(req);
 
+    console.log("=== PAYUNi return handler start ===");
+    console.log("method:", req.method);
+    console.log("query:", JSON.stringify(req.query));
+
     try {
         const payload = req.method === "GET" ? req.query || {} : await readRequestBody(req);
+
+        console.log("payload keys:", Object.keys(payload));
+        console.log("payload:", JSON.stringify(payload));
+
         const { encryptInfo, hashInfo, status: payloadStatus } = getPayloadFields(payload);
 
+        console.log("encryptInfo exists:", !!encryptInfo);
+        console.log("hashInfo exists:", !!hashInfo);
+        console.log("payloadStatus:", payloadStatus);
+
         if (!encryptInfo || !hashInfo) {
+            console.log("FAIL: missing encryptInfo or hashInfo");
             return res.redirect(`${baseUrl}/checkout/fail`);
         }
 
-        if (!verifyHashInfo(encryptInfo, hashInfo)) {
+        const hashValid = verifyHashInfo(encryptInfo, hashInfo);
+        console.log("hashValid:", hashValid);
+
+        if (!hashValid) {
+            console.log("FAIL: hash verification failed");
             return res.redirect(`${baseUrl}/checkout/fail`);
         }
 
         const decrypted = decryptTradeInfo(encryptInfo);
+        console.log("decrypted:", JSON.stringify(decrypted));
+
         const merchantOrderNo = decrypted.MerTradeNo || decrypted.MerchantOrderNo;
         const tradeNo = decrypted.TradeNo || null;
         const paid = isPaid(payloadStatus, decrypted);
 
+        console.log("merchantOrderNo:", merchantOrderNo);
+        console.log("tradeNo:", tradeNo);
+        console.log("paid:", paid);
+
         if (!merchantOrderNo) {
+            console.log("FAIL: missing merchantOrderNo");
             return res.redirect(`${baseUrl}/checkout/fail`);
         }
 
@@ -102,6 +127,8 @@ export default async function handler(req, res) {
                 return res.redirect(`${baseUrl}/checkout/fail`);
             }
 
+            console.log("SUCCESS: order updated to paid, redirecting to success");
+
             const access = createCheckoutAccessToken({
                 merchantOrderNo,
             });
@@ -112,6 +139,8 @@ export default async function handler(req, res) {
                 )}&access=${encodeURIComponent(access)}`
             );
         }
+
+        console.log("FAIL: not paid, updating to failed");
 
         await supabaseAdmin
             .from("orders")
