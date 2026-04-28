@@ -1,0 +1,97 @@
+[1mdiff --git a/api/download/request.js b/api/download/request.js[m
+[1mindex e6e57a8..00302c7 100644[m
+[1m--- a/api/download/request.js[m
+[1m+++ b/api/download/request.js[m
+[36m@@ -2,6 +2,7 @@[m
+ import { supabaseAdmin } from "../../lib/supabaseAdmin.js";[m
+ import { getProductConfig } from "../../lib/catalog.js";[m
+ import { verifyCheckoutAccessToken } from "../utils/checkoutAccessToken.js";[m
+[32m+[m[32mimport { readJsonBody } from "../../utils/readBody.js";[m
+ [m
+ const PRIVATE_BUCKET = process.env.SUPABASE_PRIVATE_BUCKET || "digital-products";[m
+ [m
+[36m@@ -114,7 +115,7 @@[m [mexport default async function handler(req, res) {[m
+ [m
+         const { data, error } = await supabaseAdmin.storage[m
+             .from(PRIVATE_BUCKET)[m
+[31m-            .createSignedUrl(product.storagePath, 60, {[m
+[32m+[m[32m            .createSignedUrl(product.storagePath, 300, {[m
+                 download: product.fileName,[m
+             });[m
+ [m
+[1mdiff --git a/api/payments/payuni/create.js b/api/payments/payuni/create.js[m
+[1mindex 87df5bc..417acb3 100644[m
+[1m--- a/api/payments/payuni/create.js[m
+[1m+++ b/api/payments/payuni/create.js[m
+[36m@@ -2,6 +2,7 @@[m
+ import { encryptTradeInfo, createHashInfo } from "./crypto.js";[m
+ import { supabaseAdmin } from "../../../lib/supabaseAdmin.js";[m
+ import { getProductConfig } from "../../../lib/catalog.js";[m
+[32m+[m[32mimport { readJsonBody } from "../../utils/readBody.js";[m
+ [m
+ const { PAYUNI_MERCHANT_ID, PAYUNI_API_URL, PAYUNI_TYPE, VERCEL_URL } = process.env;[m
+ [m
+[1mdiff --git a/api/payments/payuni/notify.js b/api/payments/payuni/notify.js[m
+[1mindex cb0e0a4..325efec 100644[m
+[1m--- a/api/payments/payuni/notify.js[m
+[1m+++ b/api/payments/payuni/notify.js[m
+[36m@@ -58,7 +58,6 @@[m [mexport default async function handler(req, res) {[m
+         }[m
+ [m
+         const payload = await readRequestBody(req);[m
+[31m-        console.log("notify raw payload:", JSON.stringify(payload));[m
+ [m
+         const { encryptInfo, hashInfo, status: payloadStatus } = getPayloadFields(payload);[m
+         console.log("encryptInfo exists:", !!encryptInfo);[m
+[36m@@ -77,7 +76,7 @@[m [mexport default async function handler(req, res) {[m
+         }[m
+ [m
+         const decrypted = decryptTradeInfo(encryptInfo);[m
+[31m-        console.log("decrypted:", JSON.stringify(decrypted));[m
+[32m+[m
+ [m
+         const merchantOrderNo = decrypted.MerTradeNo || decrypted.MerchantOrderNo;[m
+         const tradeNo = decrypted.TradeNo || null;[m
+[36m@@ -98,7 +97,8 @@[m [mexport default async function handler(req, res) {[m
+                     trade_no: tradeNo,[m
+                     paid_at: new Date().toISOString(),[m
+                 })[m
+[31m-                .eq("merchant_order_no", merchantOrderNo);[m
+[32m+[m[32m                .eq("merchant_order_no", merchantOrderNo)[m
+[32m+[m[32m                .eq("status", "pending");[m
+ [m
+             if (error) {[m
+                 console.error("payuni notify db error:", error);[m
+[1mdiff --git a/api/payments/payuni/return.js b/api/payments/payuni/return.js[m
+[1mindex cb9036d..3b5b054 100644[m
+[1m--- a/api/payments/payuni/return.js[m
+[1m+++ b/api/payments/payuni/return.js[m
+[36m@@ -16,7 +16,7 @@[m [mfunction sleep(ms) {[m
+     return new Promise((resolve) => setTimeout(resolve, ms));[m
+ }[m
+ [m
+[31m-async function pollOrderStatus(orderNo, maxWaitMs = 12000, intervalMs = 1500) {[m
+[32m+[m[32masync function pollOrderStatus(orderNo, maxWaitMs = 8000, intervalMs = 1500) {[m
+     const start = Date.now();[m
+ [m
+     while (Date.now() - start < maxWaitMs) {[m
+[1mdiff --git a/api/utils/readBody.js b/api/utils/readBody.js[m
+[1mnew file mode 100644[m
+[1mindex 0000000..a20130f[m
+[1m--- /dev/null[m
+[1m+++ b/api/utils/readBody.js[m
+[36m@@ -0,0 +1,13 @@[m
+[32m+[m[32mexport async function readJsonBody(req) {[m
+[32m+[m[32m    if (req.body && typeof req.body === "object" && !Buffer.isBuffer(req.body)) {[m
+[32m+[m[32m        return req.body;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    if (typeof req.body === "string") {[m
+[32m+[m[32m        return JSON.parse(req.body || "{}");[m
+[32m+[m[32m    }[m
+[32m+[m[32m    const chunks = [];[m
+[32m+[m[32m    for await (const chunk of req) {[m
+[32m+[m[32m        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));[m
+[32m+[m[32m    }[m
+[32m+[m[32m    return JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
