@@ -4,11 +4,9 @@ import { supabaseAdmin } from "../../../lib/supabaseAdmin.js";
 
 function parseRawBody(raw, contentType = "") {
     if (!raw) return {};
-
     if (String(contentType).includes("application/json")) {
         return JSON.parse(raw);
     }
-
     return Object.fromEntries(new URLSearchParams(raw));
 }
 
@@ -16,16 +14,13 @@ async function readRequestBody(req) {
     if (req.body && typeof req.body === "object" && !Buffer.isBuffer(req.body)) {
         return req.body;
     }
-
     if (typeof req.body === "string") {
         return parseRawBody(req.body, req.headers["content-type"]);
     }
-
     const chunks = [];
     for await (const chunk of req) {
         chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
     }
-
     return parseRawBody(Buffer.concat(chunks).toString("utf8"), req.headers["content-type"]);
 }
 
@@ -47,7 +42,10 @@ function isPaid(payloadStatus, decrypted) {
         .filter(Boolean)
         .map((value) => String(value).toUpperCase());
 
-    return candidates.includes("SUCCESS");
+    console.log("isPaid candidates:", candidates);
+
+    // ✅ 補上 "1"，PAYUNi sandbox 可能回傳數字狀態
+    return candidates.includes("SUCCESS") || candidates.includes("1");
 }
 
 export default async function handler(req, res) {
@@ -72,6 +70,9 @@ export default async function handler(req, res) {
         const tradeNo = decrypted.TradeNo || null;
         const paid = isPaid(payloadStatus, decrypted);
 
+        console.log("notify merchantOrderNo:", merchantOrderNo);
+        console.log("notify paid:", paid);
+
         if (!merchantOrderNo) {
             return res.status(400).send("Missing MerTradeNo");
         }
@@ -93,9 +94,7 @@ export default async function handler(req, res) {
         } else {
             const { error } = await supabaseAdmin
                 .from("orders")
-                .update({
-                    status: "failed",
-                })
+                .update({ status: "failed" })
                 .eq("merchant_order_no", merchantOrderNo)
                 .neq("status", "paid");
 

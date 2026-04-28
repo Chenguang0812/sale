@@ -9,7 +9,6 @@ const PAYUNI_VERSION = "1.0";
 
 function buildBaseUrl(req) {
     if (VERCEL_URL) return `https://${VERCEL_URL}`;
-
     const protocol = req.headers["x-forwarded-proto"] || "http";
     const host = req.headers.host;
     return `${protocol}://${host}`;
@@ -17,7 +16,6 @@ function buildBaseUrl(req) {
 
 function getPayuniUrl() {
     if (PAYUNI_API_URL) return PAYUNI_API_URL;
-
     return PAYUNI_TYPE === "t"
         ? "https://sandbox-api.payuni.com.tw/api/upp"
         : "https://api.payuni.com.tw/api/upp";
@@ -31,11 +29,9 @@ function createMerchantOrderNo(productId) {
     const safeProductId = String(productId || "product")
         .replace(/[^a-zA-Z0-9_]/g, "_")
         .slice(0, 14);
-
     const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)
         .toString()
         .padStart(3, "0")}`.slice(-13);
-
     return `${safeProductId}_${suffix}`.slice(0, 30);
 }
 
@@ -43,16 +39,13 @@ async function readJsonBody(req) {
     if (req.body && typeof req.body === "object" && !Buffer.isBuffer(req.body)) {
         return req.body;
     }
-
     if (typeof req.body === "string") {
         return JSON.parse(req.body || "{}");
     }
-
     const chunks = [];
     for await (const chunk of req) {
         chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
     }
-
     return JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
 }
 
@@ -73,7 +66,6 @@ export default async function handler(req, res) {
         if (!productId) {
             return res.status(400).json({ ok: false, message: "productId is required" });
         }
-
         if (!email) {
             return res.status(400).json({ ok: false, message: "email is required" });
         }
@@ -106,7 +98,8 @@ export default async function handler(req, res) {
             MerTradeNo: merchantOrderNo,
             TradeAmt: String(product.price),
             Timestamp: String(Math.floor(Date.now() / 1000)),
-            ReturnURL: `${baseUrl}/api/payments/payuni/return`,
+            // ✅ 帶上 order 參數，讓 return handler 知道是哪筆訂單
+            ReturnURL: `${baseUrl}/api/payments/payuni/return?order=${encodeURIComponent(merchantOrderNo)}`,
             NotifyURL: `${baseUrl}/api/payments/payuni/notify`,
         };
 
@@ -124,7 +117,6 @@ export default async function handler(req, res) {
         });
     } catch (error) {
         console.error("payuni create error:", error);
-
         return res.status(500).json({
             ok: false,
             message: error.message || "Create payment failed",
