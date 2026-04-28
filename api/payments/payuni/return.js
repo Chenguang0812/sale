@@ -12,6 +12,44 @@ function buildBaseUrl(req) {
     return `${protocol}://${host}`;
 }
 
+function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function pollOrderStatus(orderNo, maxWaitMs = 6000, intervalMs = 1000) {
+    const start = Date.now();
+
+    while (Date.now() - start < maxWaitMs) {
+        const { data, error } = await supabaseAdmin
+            .from("orders")
+            .select("status, merchant_order_no")
+            .eq("merchant_order_no", orderNo)
+            .maybeSingle();
+
+        console.log("poll status:", data?.status, "elapsed:", Date.now() - start, "ms");
+
+        if (error) return { data: null, error };
+        if (!data) return { data: null, error: new Error("order not found") };
+
+        // 有明確結果就直接回傳
+        if (data.status === "paid" || data.status === "failed") {
+            return { data, error: null };
+        }
+
+        // 還是 pending，等一下再查
+        await sleep(intervalMs);
+    }
+
+    // 超時，最後再查一次
+    const { data, error } = await supabaseAdmin
+        .from("orders")
+        .select("status, merchant_order_no")
+        .eq("merchant_order_no", orderNo)
+        .maybeSingle();
+
+    return { data, error };
+}
+
 export default async function handler(req, res) {
     const baseUrl = buildBaseUrl(req);
 
@@ -20,8 +58,6 @@ export default async function handler(req, res) {
     console.log("query:", JSON.stringify(req.query));
 
     try {
-        // PAYUNi 只是把使用者 redirect 回來，不帶 EncryptInfo
-        // merchantOrderNo 由我們自己放在 ReturnURL query 裡
         const orderNo = String(req.query?.order || "").trim();
 
         console.log("orderNo from query:", orderNo);
@@ -31,15 +67,11 @@ export default async function handler(req, res) {
             return res.redirect(`${baseUrl}/checkout/fail`);
         }
 
-        // 查 DB，notify 應已在此之前更新狀態
-        const { data, error } = await supabaseAdmin
-            .from("orders")
-            .select("status, merchant_order_no")
-            .eq("merchant_order_no", orderNo)
-            .maybeSingle();
+        // 輪詢等 notify 寫入（最多 6 秒）
+        const { data, error } = await pollOrderStatus(orderNo);
 
-        console.log("db data:", JSON.stringify(data));
-        console.log("db error:", error?.message);
+        console.log("final db data:", JSON.stringify(data));
+        console.log("final db error:", error?.message);
 
         if (error || !data) {
             console.log("FAIL: order not found or db error");
@@ -47,7 +79,7 @@ export default async function handler(req, res) {
         }
 
         if (data.status === "paid") {
-            console.log("SUCCESS: order is paid, redirecting to success");
+            console.log("SUCCESS: order is paid");
             const access = createCheckoutAccessToken({ merchantOrderNo: orderNo });
             return res.redirect(
                 `${baseUrl}/checkout/success?order=${encodeURIComponent(orderNo)}&access=${encodeURIComponent(access)}`
