@@ -16,7 +16,7 @@ function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function pollOrderStatus(orderNo, maxWaitMs = 6000, intervalMs = 1000) {
+async function pollOrderStatus(orderNo, maxWaitMs = 12000, intervalMs = 1500) {
     const start = Date.now();
 
     while (Date.now() - start < maxWaitMs) {
@@ -31,16 +31,13 @@ async function pollOrderStatus(orderNo, maxWaitMs = 6000, intervalMs = 1000) {
         if (error) return { data: null, error };
         if (!data) return { data: null, error: new Error("order not found") };
 
-        // 有明確結果就直接回傳
         if (data.status === "paid" || data.status === "failed") {
             return { data, error: null };
         }
 
-        // 還是 pending，等一下再查
         await sleep(intervalMs);
     }
 
-    // 超時，最後再查一次
     const { data, error } = await supabaseAdmin
         .from("orders")
         .select("status, merchant_order_no")
@@ -67,7 +64,6 @@ export default async function handler(req, res) {
             return res.redirect(`${baseUrl}/checkout/fail`);
         }
 
-        // 輪詢等 notify 寫入（最多 6 秒）
         const { data, error } = await pollOrderStatus(orderNo);
 
         console.log("final db data:", JSON.stringify(data));
@@ -83,6 +79,13 @@ export default async function handler(req, res) {
             const access = createCheckoutAccessToken({ merchantOrderNo: orderNo });
             return res.redirect(
                 `${baseUrl}/checkout/success?order=${encodeURIComponent(orderNo)}&access=${encodeURIComponent(access)}`
+            );
+        }
+
+        if (data.status === "pending") {
+            console.log("TIMEOUT: order still pending, redirect to processing");
+            return res.redirect(
+                `${baseUrl}/checkout/processing?order=${encodeURIComponent(orderNo)}`
             );
         }
 

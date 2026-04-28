@@ -44,28 +44,41 @@ function isPaid(payloadStatus, decrypted) {
 
     console.log("isPaid candidates:", candidates);
 
-    // ✅ 補上 "1"，PAYUNi sandbox 可能回傳數字狀態
     return candidates.includes("SUCCESS") || candidates.includes("1");
 }
 
 export default async function handler(req, res) {
     try {
+        console.log("=== PAYUNi notify handler start ===");
+        console.log("method:", req.method);
+        console.log("headers:", JSON.stringify(req.headers));
+
         if (req.method !== "POST") {
             return res.status(405).send("Method not allowed");
         }
 
         const payload = await readRequestBody(req);
+        console.log("notify raw payload:", JSON.stringify(payload));
+
         const { encryptInfo, hashInfo, status: payloadStatus } = getPayloadFields(payload);
+        console.log("encryptInfo exists:", !!encryptInfo);
+        console.log("hashInfo exists:", !!hashInfo);
 
         if (!encryptInfo || !hashInfo) {
+            console.log("FAIL: missing encryptInfo or hashInfo");
             return res.status(400).send("Missing EncryptInfo or HashInfo");
         }
 
-        if (!verifyHashInfo(encryptInfo, hashInfo)) {
+        const hashValid = verifyHashInfo(encryptInfo, hashInfo);
+        console.log("hashValid:", hashValid);
+
+        if (!hashValid) {
             return res.status(400).send("Invalid HashInfo");
         }
 
         const decrypted = decryptTradeInfo(encryptInfo);
+        console.log("decrypted:", JSON.stringify(decrypted));
+
         const merchantOrderNo = decrypted.MerTradeNo || decrypted.MerchantOrderNo;
         const tradeNo = decrypted.TradeNo || null;
         const paid = isPaid(payloadStatus, decrypted);
@@ -91,6 +104,8 @@ export default async function handler(req, res) {
                 console.error("payuni notify db error:", error);
                 return res.status(500).send("DB update failed");
             }
+
+            console.log("SUCCESS: order marked as paid");
         } else {
             const { error } = await supabaseAdmin
                 .from("orders")
@@ -102,6 +117,8 @@ export default async function handler(req, res) {
                 console.error("payuni notify db error:", error);
                 return res.status(500).send("DB update failed");
             }
+
+            console.log("order marked as failed");
         }
 
         return res.status(200).send("OK");
