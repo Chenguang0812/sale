@@ -8,6 +8,8 @@ const { PAYUNI_MERCHANT_ID, PAYUNI_API_URL, PAYUNI_TYPE, VERCEL_URL } = process.
 const PAYUNI_VERSION = "1.0";
 
 function buildBaseUrl(req) {
+    // ✅ 優先用 SITE_URL（你的正式 domain），避免用到 preview deploy URL
+    if (process.env.SITE_URL) return process.env.SITE_URL;
     if (VERCEL_URL) return `https://${VERCEL_URL}`;
     const protocol = req.headers["x-forwarded-proto"] || "http";
     const host = req.headers.host;
@@ -78,6 +80,10 @@ export default async function handler(req, res) {
         const merchantOrderNo = createMerchantOrderNo(productId);
         const baseUrl = buildBaseUrl(req);
 
+        // ✅ 加 log 確認 NotifyURL 是否正確
+        console.log("baseUrl:", baseUrl);
+        console.log("NotifyURL:", `${baseUrl}/api/payments/payuni/notify`);
+
         const { error: insertError } = await supabaseAdmin.from("orders").insert({
             merchant_order_no: merchantOrderNo,
             email,
@@ -98,7 +104,6 @@ export default async function handler(req, res) {
             MerTradeNo: merchantOrderNo,
             TradeAmt: String(product.price),
             Timestamp: String(Math.floor(Date.now() / 1000)),
-            // ✅ 帶上 order 參數，讓 return handler 知道是哪筆訂單
             ReturnURL: `${baseUrl}/api/payments/payuni/return?order=${encodeURIComponent(merchantOrderNo)}`,
             NotifyURL: `${baseUrl}/api/payments/payuni/notify`,
         };
