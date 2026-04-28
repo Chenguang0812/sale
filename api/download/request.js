@@ -136,3 +136,7 @@ export default async function handler(req, res) {
         });
     }
 }
+
+console.log("paidOrder.product_slug:", paidOrder.product_slug);
+console.log("product:", JSON.stringify(product));
+console.log("storagePath:", product?.storagePath);
