@@ -58,7 +58,6 @@ export default async function handler(req, res) {
         }
 
         const payload = await readRequestBody(req);
-        console.log("notify raw payload:", JSON.stringify(payload));
 
         const { encryptInfo, hashInfo, status: payloadStatus } = getPayloadFields(payload);
         console.log("encryptInfo exists:", !!encryptInfo);
@@ -77,7 +76,7 @@ export default async function handler(req, res) {
         }
 
         const decrypted = decryptTradeInfo(encryptInfo);
-        console.log("decrypted:", JSON.stringify(decrypted));
+
 
         const merchantOrderNo = decrypted.MerTradeNo || decrypted.MerchantOrderNo;
         const tradeNo = decrypted.TradeNo || null;
@@ -98,7 +97,8 @@ export default async function handler(req, res) {
                     trade_no: tradeNo,
                     paid_at: new Date().toISOString(),
                 })
-                .eq("merchant_order_no", merchantOrderNo);
+                .eq("merchant_order_no", merchantOrderNo)
+                .eq("status", "pending");
 
             if (error) {
                 console.error("payuni notify db error:", error);

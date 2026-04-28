@@ -2,6 +2,7 @@
 import { supabaseAdmin } from "../../lib/supabaseAdmin.js";
 import { getProductConfig } from "../../lib/catalog.js";
 import { verifyCheckoutAccessToken } from "../utils/checkoutAccessToken.js";
+import { readJsonBody } from "../../utils/readBody.js";
 
 const PRIVATE_BUCKET = process.env.SUPABASE_PRIVATE_BUCKET || "digital-products";
 
@@ -114,7 +115,7 @@ export default async function handler(req, res) {
 
         const { data, error } = await supabaseAdmin.storage
             .from(PRIVATE_BUCKET)
-            .createSignedUrl(product.storagePath, 60, {
+            .createSignedUrl(product.storagePath, 300, {
                 download: product.fileName,
             });
 

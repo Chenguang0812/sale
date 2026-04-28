@@ -2,6 +2,7 @@
 import { encryptTradeInfo, createHashInfo } from "./crypto.js";
 import { supabaseAdmin } from "../../../lib/supabaseAdmin.js";
 import { getProductConfig } from "../../../lib/catalog.js";
+import { readJsonBody } from "../../utils/readBody.js";
 
 const { PAYUNI_MERCHANT_ID, PAYUNI_API_URL, PAYUNI_TYPE, VERCEL_URL } = process.env;
 
