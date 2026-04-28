@@ -129,6 +129,43 @@ export default async function handler(req, res) {
 
         console.log("storagePath:", product.storagePath);
 
+        const folder = product.storagePath.split("/").slice(0, -1).join("/");
+        const expectedFileName = product.storagePath.split("/").pop();
+
+        const { data: files, error: listError } = await supabaseAdmin.storage
+            .from(PRIVATE_BUCKET)
+            .list(folder);
+
+        console.log("LIST folder:", folder);
+        console.log("EXPECTED fileName:", expectedFileName);
+        console.log("LIST files:", JSON.stringify(files));
+        console.log("LIST error:", listError);
+        console.log(
+            "FILE matched:",
+            files?.some((file) => file.name === expectedFileName)
+        );
+
+        if (listError) {
+            return res.status(500).json({
+                ok: false,
+                message: listError.message || "List storage folder failed",
+                details: listError,
+            });
+        }
+
+        const fileExists = files?.some((file) => file.name === expectedFileName);
+
+        if (!fileExists) {
+            return res.status(404).json({
+                ok: false,
+                message: "Object not found in storage folder",
+                bucket: PRIVATE_BUCKET,
+                folder,
+                expectedFileName,
+                files,
+            });
+        }
+
         const { data, error } = await supabaseAdmin.storage
             .from(PRIVATE_BUCKET)
             .createSignedUrl(product.storagePath, 300, {
