@@ -101,6 +101,10 @@ export default async function handler(req, res) {
 
         const product = getProductConfig(paidOrder.product_slug);
 
+        console.log("paidOrder.product_slug:", paidOrder.product_slug);
+        console.log("product:", JSON.stringify(product));
+        console.log("storagePath:", product?.storagePath);
+
         if (!product) {
             return res.status(404).json({
                 ok: false,
@@ -136,7 +140,3 @@ export default async function handler(req, res) {
         });
     }
 }
-
-console.log("paidOrder.product_slug:", paidOrder.product_slug);
-console.log("product:", JSON.stringify(product));
-console.log("storagePath:", product?.storagePath);
