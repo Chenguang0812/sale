@@ -1,1 +1,6 @@
-'{"rewrites":[{"source":"/api/(.*)","destination":"/api/$1"},{"source":"(.*)","destination":"/index.html"}]}' | Out-File -FilePath vercel.json -Encoding ascii
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
