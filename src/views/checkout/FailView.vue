@@ -5,10 +5,7 @@
 
       <h1 class="mt-3 text-4xl font-semibold">付款未完成</h1>
 
-      <p class="mt-6 leading-8 text-white/65">
-        目前這是前端測試用的失敗頁。之後接上藍新金流後，如果交易失敗、取消或付款未完成，
-        會導回這裡並提示使用者重新操作。
-      </p>
+      <p class="mt-6 leading-8 text-white/65">你付款失敗了啦</p>
 
       <div class="mt-8 flex gap-4">
         <RouterLink
