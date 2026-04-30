@@ -1,6 +1,6 @@
 <script setup>
 import ProductCard from "@/components/product/ProductCard.vue";
-import { getAllProducts } from "@/services/product.service";
+import { getAllProducts } from "@/services/product.service.js";
 import SectionTitle from "@/components/common/SectionTitle.vue";
 
 const products = getAllProducts();
